@@ -2,7 +2,7 @@
 <html lang="id">
 <head>
     <meta charset="UTF-8">
-    <title>Hi-Tech Wall 16:9 Permanent Switch</title>
+    <title>Hi-Tech Wall Fullscreen</title>
     <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@700&display=swap" rel="stylesheet">
     <style>
         :root {
@@ -22,8 +22,33 @@
             flex-direction: column-reverse;
             align-items: center;
             justify-content: center;
-            gap: 8vh;
+            gap: 5vh;
         }
+
+        /* Container Gambar Fullscreen */
+        #final-container {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            z-index: 2000; /* Paling atas di atas segalanya */
+            display: none;
+            background: black;
+        }
+
+        #final-image {
+            width: 100%;
+            height: 100%;
+            object-fit: cover; /* Menjamin gambar memenuhi layar tanpa melar */
+            opacity: 0;
+        }
+
+        .img-fade-in {
+            animation: imgFade 2s forwards;
+        }
+
+        @keyframes imgFade { to { opacity: 1; } }
 
         /* Flashbang Layer */
         #flashbang {
@@ -33,110 +58,37 @@
             background: white;
             opacity: 0;
             pointer-events: none;
-            z-index: 1000;
+            z-index: 3000; /* Di atas gambar saat meledak */
         }
 
         .flash-active { animation: flashAnim 1.5s ease-out forwards; }
-        @keyframes flashAnim { 0% { opacity: 0; } 10% { opacity: 1; } 100% { opacity: 0; } }
+        @keyframes flashAnim { 0% { opacity: 0; } 15% { opacity: 1; } 100% { opacity: 0; } }
 
-        /* SVG Sirkuit */
-        #circuit-svg {
-            position: absolute;
-            top: 0; left: 0;
-            width: 100%; height: 100%;
-            pointer-events: none;
-            z-index: 1;
-        }
-
-        .energy-path {
-            fill: none;
-            stroke: var(--neon);
-            stroke-width: 4;
-            stroke-dasharray: 1500;
-            stroke-dashoffset: 1500;
-            filter: drop-shadow(0 0 10px var(--neon));
-            transition: stroke-dashoffset 0.8s ease-in-out;
-            opacity: 0;
-        }
-
+        /* Sisanya tetap sama dengan versi sebelumnya */
+        #circuit-svg { position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 1; }
+        .energy-path { fill: none; stroke: var(--neon); stroke-width: 4; stroke-dasharray: 1500; stroke-dashoffset: 1500; filter: drop-shadow(0 0 10px var(--neon)); transition: 0.8s opacity, 0.8s stroke-dashoffset; opacity: 0; }
         .energy-path.active { stroke-dashoffset: 0; opacity: 1; }
 
-        /* Area Kontrol */
-        #controls-area {
-            display: flex;
-            gap: 40px;
-            z-index: 10;
-            transition: all 0.8s;
-        }
+        .btn-grid { display: flex; gap: 40px; z-index: 10; transition: 0.5s; }
+        .node-btn { width: 100px; height: 100px; border: 3px solid var(--neon); background: rgba(0,0,0,0.8); border-radius: 50%; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 1.2rem; transition: 0.3s; user-select: none; }
+        .node-btn.activated { background: var(--neon); color: black; box-shadow: 0 0 40px var(--neon); pointer-events: none; transform: scale(0.9); }
 
-        .node-btn {
-            width: 100px; height: 100px;
-            border: 3px solid var(--neon);
-            background: rgba(0,0,0,0.8);
-            border-radius: 50%;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 1.2rem;
-            transition: 0.3s;
-            user-select: none;
-        }
-
-        .node-btn.activated {
-            background: var(--neon);
-            color: black;
-            box-shadow: 0 0 40px var(--neon);
-            pointer-events: none; /* Tidak bisa di-klik lagi setelah aktif */
-            transform: scale(0.95);
-        }
-
-        /* Area Display */
-        #main-display {
-            width: 80vw;
-            height: 45vh;
-            position: relative;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            z-index: 10;
-        }
-
-        #status-display {
-            font-size: 4rem;
-            color: var(--neon);
-            text-shadow: 0 0 20px var(--neon);
-            text-align: center;
-        }
-
+        #main-display { width: 80vw; height: 40vh; display: flex; align-items: center; justify-content: center; z-index: 10; }
+        #status-display { font-size: 4rem; color: var(--neon); text-shadow: 0 0 20px var(--neon); }
         .bounce { animation: bounceEffect 0.6s ease-in-out; }
         @keyframes bounceEffect { 0% { transform: scale(1); } 50% { transform: scale(1.4); } 100% { transform: scale(1); } }
-
-        /* Gambar Akhir */
-        #final-image {
-            max-width: 100%;
-            max-height: 100%;
-            display: none;
-            opacity: 0;
-            filter: drop-shadow(0 0 40px var(--neon));
-        }
-
-        .img-fade-in {
-            display: block !important;
-            animation: imgFade 2.5s forwards;
-        }
-
-        @keyframes imgFade { to { opacity: 1; } }
-        
-        .fade-out { opacity: 0; transform: translateY(30px); pointer-events: none; }
     </style>
 </head>
 <body>
 
     <div id="flashbang"></div>
+    <div id="final-container">
+        <img id="final-image" src="https://images.pexels.com/photos/799960/pexels-photo-799960.jpeg?_gl=1*1d2lo6e*_ga*NTc4MjI0MzAzLjE3Njc1MzQ5MzY.*_ga_8JE65Q40S6*czE3Njc1MzQ5MzYkbzEkZzEkdDE3Njc1MzUxOTgkajQ0JGwwJGgw" alt="Success Image">
+    </div>
+
     <svg id="circuit-svg"></svg>
 
-    <div id="controls-area">
+    <div class="btn-grid" id="controls">
         <div class="node-btn" onclick="activateNode(1, this)">01</div>
         <div class="node-btn" onclick="activateNode(2, this)">02</div>
         <div class="node-btn" onclick="activateNode(3, this)">03</div>
@@ -146,30 +98,22 @@
 
     <div id="main-display">
         <div id="status-display">INITIATE SYSTEM</div>
-        <img id="final-image" src="https://via.placeholder.com/1280x720/000000/00f3ff?text=WELCOME+TO+WORLD" alt="Success">
     </div>
 
     <script>
         let activatedCount = 0;
         let isSequenceRunning = false;
-        const statusDisplay = document.getElementById('status-display');
-        const finalImage = document.getElementById('final-image');
-        const controls = document.getElementById('controls-area');
 
         function activateNode(id, el) {
             if (isSequenceRunning || el.classList.contains('activated')) return;
-
-            // Efek Aktif Permanen
             el.classList.add('activated');
             activatedCount++;
-            
             drawPath(id, el);
 
             if (activatedCount === 5) {
                 startSequence();
             } else {
-                statusDisplay.innerText = `READY: ${activatedCount}/5`;
-                statusDisplay.style.fontSize = "3rem";
+                document.getElementById('status-display').innerText = `READY: ${activatedCount}/5`;
             }
         }
 
@@ -177,7 +121,6 @@
             const svg = document.getElementById('circuit-svg');
             const btnRect = btn.getBoundingClientRect();
             const targetRect = document.getElementById('main-display').getBoundingClientRect();
-
             const x1 = btnRect.left + btnRect.width / 2;
             const y1 = btnRect.top;
             const targetX = targetRect.left + (targetRect.width / 6 * id);
@@ -186,7 +129,6 @@
             const path = document.createElementNS("http://www.w3.org/2000/svg", "path");
             const midY = y1 - (y1 - targetY) / 2;
             const d = `M ${x1} ${y1} L ${x1} ${midY} L ${targetX} ${midY} L ${targetX} ${targetY}`;
-            
             path.setAttribute("d", d);
             path.setAttribute("class", "energy-path active");
             svg.appendChild(path);
@@ -194,28 +136,32 @@
 
         async function startSequence() {
             isSequenceRunning = true;
-            statusDisplay.style.fontSize = "6rem";
+            const status = document.getElementById('status-display');
+            status.style.fontSize = "6rem";
 
-            // Countdown 5 ke 1
             for (let i = 5; i > 0; i--) {
-                statusDisplay.innerText = i;
-                statusDisplay.classList.remove('bounce');
-                void statusDisplay.offsetWidth; // Force reflow
-                statusDisplay.classList.add('bounce');
+                status.innerText = i;
+                status.classList.remove('bounce');
+                void status.offsetWidth; 
+                status.classList.add('bounce');
                 await new Promise(r => setTimeout(r, 1000));
             }
 
-            // 1. Flashbang
+            // TAHAP AKHIR
             document.getElementById('flashbang').classList.add('flash-active');
 
-            // 2. Pembersihan UI saat layar putih
             setTimeout(() => {
-                controls.classList.add('fade-out');
-                statusDisplay.style.display = "none";
-                document.querySelectorAll('.energy-path').forEach(p => p.style.opacity = '0');
+                // Tampilkan Container Gambar
+                const container = document.getElementById('final-container');
+                const img = document.getElementById('final-image');
                 
-                // 3. Munculkan Gambar Akhir
-                finalImage.classList.add('img-fade-in');
+                container.style.display = "block";
+                img.classList.add('img-fade-in');
+
+                // Sembunyikan elemen lama di belakang
+                document.getElementById('controls').style.opacity = "0";
+                document.getElementById('main-display').style.opacity = "0";
+                document.querySelectorAll('.energy-path').forEach(p => p.style.opacity = "0");
             }, 200);
         }
     </script>
