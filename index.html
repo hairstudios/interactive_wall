@@ -2,7 +2,7 @@
 <html lang="id">
 <head>
     <meta charset="UTF-8">
-    <title>Hi-Tech Wall 16:9</title>
+    <title>Hi-Tech Wall 16:9 Permanent Switch</title>
     <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@700&display=swap" rel="stylesheet">
     <style>
         :root {
@@ -22,10 +22,10 @@
             flex-direction: column-reverse;
             align-items: center;
             justify-content: center;
-            gap: 5vh;
-            /* Ratio 16:9 dipastikan lewat ukuran kontainer */
+            gap: 8vh;
         }
 
+        /* Flashbang Layer */
         #flashbang {
             position: fixed;
             top: 0; left: 0;
@@ -39,6 +39,7 @@
         .flash-active { animation: flashAnim 1.5s ease-out forwards; }
         @keyframes flashAnim { 0% { opacity: 0; } 10% { opacity: 1; } 100% { opacity: 0; } }
 
+        /* SVG Sirkuit */
         #circuit-svg {
             position: absolute;
             top: 0; left: 0;
@@ -54,47 +55,46 @@
             stroke-dasharray: 1500;
             stroke-dashoffset: 1500;
             filter: drop-shadow(0 0 10px var(--neon));
-            transition: stroke-dashoffset 0.5s ease;
+            transition: stroke-dashoffset 0.8s ease-in-out;
             opacity: 0;
         }
 
         .energy-path.active { stroke-dashoffset: 0; opacity: 1; }
 
-        /* Area Kontrol (Bawah) */
+        /* Area Kontrol */
         #controls-area {
             display: flex;
             gap: 40px;
             z-index: 10;
-            transition: opacity 1s, transform 1s;
+            transition: all 0.8s;
         }
 
         .node-btn {
-            width: 120px; height: 120px;
-            border: 4px solid var(--neon);
+            width: 100px; height: 100px;
+            border: 3px solid var(--neon);
             background: rgba(0,0,0,0.8);
             border-radius: 50%;
             cursor: pointer;
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 1.5rem;
+            font-size: 1.2rem;
+            transition: 0.3s;
             user-select: none;
-            -webkit-user-select: none;
-            transition: 0.2s;
         }
 
-        /* Saat ditahan */
-        .node-btn.holding {
+        .node-btn.activated {
             background: var(--neon);
             color: black;
-            box-shadow: 0 0 50px var(--neon);
-            transform: scale(0.9);
+            box-shadow: 0 0 40px var(--neon);
+            pointer-events: none; /* Tidak bisa di-klik lagi setelah aktif */
+            transform: scale(0.95);
         }
 
-        /* Area Display (Atas) */
+        /* Area Display */
         #main-display {
             width: 80vw;
-            height: 50vh;
+            height: 45vh;
             position: relative;
             display: flex;
             align-items: center;
@@ -103,13 +103,14 @@
         }
 
         #status-display {
-            font-size: 5rem;
+            font-size: 4rem;
             color: var(--neon);
             text-shadow: 0 0 20px var(--neon);
+            text-align: center;
         }
 
-        .bounce { animation: bounceEffect 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
-        @keyframes bounceEffect { 0% { transform: scale(1); } 50% { transform: scale(1.5); } 100% { transform: scale(1); } }
+        .bounce { animation: bounceEffect 0.6s ease-in-out; }
+        @keyframes bounceEffect { 0% { transform: scale(1); } 50% { transform: scale(1.4); } 100% { transform: scale(1); } }
 
         /* Gambar Akhir */
         #final-image {
@@ -117,17 +118,17 @@
             max-height: 100%;
             display: none;
             opacity: 0;
-            filter: drop-shadow(0 0 30px var(--neon));
+            filter: drop-shadow(0 0 40px var(--neon));
         }
 
         .img-fade-in {
             display: block !important;
-            animation: imgFade 2s forwards;
+            animation: imgFade 2.5s forwards;
         }
 
         @keyframes imgFade { to { opacity: 1; } }
         
-        .hidden { opacity: 0; pointer-events: none; transform: translateY(50px); }
+        .fade-out { opacity: 0; transform: translateY(30px); pointer-events: none; }
     </style>
 </head>
 <body>
@@ -136,98 +137,39 @@
     <svg id="circuit-svg"></svg>
 
     <div id="controls-area">
-        <div class="node-btn" id="btn1">01</div>
-        <div class="node-btn" id="btn2">02</div>
-        <div class="node-btn" id="btn3">03</div>
-        <div class="node-btn" id="btn4">04</div>
-        <div class="node-btn" id="btn5">05</div>
+        <div class="node-btn" onclick="activateNode(1, this)">01</div>
+        <div class="node-btn" onclick="activateNode(2, this)">02</div>
+        <div class="node-btn" onclick="activateNode(3, this)">03</div>
+        <div class="node-btn" onclick="activateNode(4, this)">04</div>
+        <div class="node-btn" onclick="activateNode(5, this)">05</div>
     </div>
 
     <div id="main-display">
-        <div id="status-display">HOLD ALL NODES</div>
-        <img id="final-image" src="https://via.placeholder.com/1280x720/000000/00f3ff?text=YOUR+CONTENT+HERE" alt="Success">
+        <div id="status-display">INITIATE SYSTEM</div>
+        <img id="final-image" src="https://via.placeholder.com/1280x720/000000/00f3ff?text=WELCOME+TO+WORLD" alt="Success">
     </div>
 
     <script>
-        let holdingCount = 0;
-        let isComplete = false;
-        let countdownValue = 5;
-        let countdownTimer = null;
+        let activatedCount = 0;
+        let isSequenceRunning = false;
         const statusDisplay = document.getElementById('status-display');
         const finalImage = document.getElementById('final-image');
         const controls = document.getElementById('controls-area');
 
-        // Daftarkan event untuk setiap tombol
-        document.querySelectorAll('.node-btn').forEach((btn, index) => {
-            const id = index + 1;
+        function activateNode(id, el) {
+            if (isSequenceRunning || el.classList.contains('activated')) return;
+
+            // Efek Aktif Permanen
+            el.classList.add('activated');
+            activatedCount++;
             
-            // Support Touch & Mouse
-            ['touchstart', 'mousedown'].forEach(evt => {
-                btn.addEventListener(evt, (e) => {
-                    e.preventDefault();
-                    if (isComplete) return;
-                    startHolding(id, btn);
-                });
-            });
+            drawPath(id, el);
 
-            ['touchend', 'mouseup', 'mouseleave'].forEach(evt => {
-                btn.addEventListener(evt, (e) => {
-                    if (isComplete) return;
-                    stopHolding(id, btn);
-                });
-            });
-        });
-
-        function startHolding(id, btn) {
-            if (btn.classList.contains('holding')) return;
-            btn.classList.add('holding');
-            holdingCount++;
-            drawPath(id, btn);
-            checkSystem();
-        }
-
-        function stopHolding(id, btn) {
-            if (!btn.classList.contains('holding')) return;
-            btn.classList.remove('holding');
-            holdingCount--;
-            removePath(id);
-            resetCountdown();
-        }
-
-        function checkSystem() {
-            if (holdingCount === 5) {
-                startCountdown();
+            if (activatedCount === 5) {
+                startSequence();
             } else {
-                statusDisplay.innerText = `READY: ${holdingCount}/5`;
+                statusDisplay.innerText = `READY: ${activatedCount}/5`;
                 statusDisplay.style.fontSize = "3rem";
-            }
-        }
-
-        function startCountdown() {
-            countdownValue = 5;
-            statusDisplay.innerText = countdownValue;
-            statusDisplay.classList.add('bounce');
-            
-            countdownTimer = setInterval(() => {
-                countdownValue--;
-                statusDisplay.innerText = countdownValue;
-                statusDisplay.classList.remove('bounce');
-                void statusDisplay.offsetWidth; // Trigger reflow
-                statusDisplay.classList.add('bounce');
-
-                if (countdownValue <= 0) {
-                    clearInterval(countdownTimer);
-                    triggerSuccess();
-                }
-            }, 1000);
-        }
-
-        function resetCountdown() {
-            clearInterval(countdownTimer);
-            countdownValue = 5;
-            if (!isComplete) {
-                statusDisplay.innerText = holdingCount > 0 ? `READY: ${holdingCount}/5` : "HOLD ALL NODES";
-                statusDisplay.classList.remove('bounce');
             }
         }
 
@@ -247,31 +189,33 @@
             
             path.setAttribute("d", d);
             path.setAttribute("class", "energy-path active");
-            path.setAttribute("id", `path-${id}`);
             svg.appendChild(path);
         }
 
-        function removePath(id) {
-            const p = document.getElementById(`path-${id}`);
-            if(p) p.remove();
-        }
+        async function startSequence() {
+            isSequenceRunning = true;
+            statusDisplay.style.fontSize = "6rem";
 
-        function triggerSuccess() {
-            isComplete = true;
-            
+            // Countdown 5 ke 1
+            for (let i = 5; i > 0; i--) {
+                statusDisplay.innerText = i;
+                statusDisplay.classList.remove('bounce');
+                void statusDisplay.offsetWidth; // Force reflow
+                statusDisplay.classList.add('bounce');
+                await new Promise(r => setTimeout(r, 1000));
+            }
+
             // 1. Flashbang
             document.getElementById('flashbang').classList.add('flash-active');
 
-            // 2. Sembunyikan Tombol & Status
+            // 2. Pembersihan UI saat layar putih
             setTimeout(() => {
-                controls.classList.add('hidden');
+                controls.classList.add('fade-out');
                 statusDisplay.style.display = "none";
+                document.querySelectorAll('.energy-path').forEach(p => p.style.opacity = '0');
                 
-                // 3. Munculkan Gambar
+                // 3. Munculkan Gambar Akhir
                 finalImage.classList.add('img-fade-in');
-                
-                // Hapus semua garis sirkuit
-                document.querySelectorAll('.energy-path').forEach(p => p.remove());
             }, 200);
         }
     </script>
